@@ -530,7 +530,7 @@ var sortPriorityList = [
   "Alphabetical reverse"
 ];
 function regardAsSortPriority(x) {
-  return sortPriorityList.includes(x) || x.split(",").every((y) => y.startsWith("#"));
+  return sortPriorityList.includes(x) || x.split(",").every((y) => y.startsWith("#")) || x.split(",").every((y) => y.startsWith("."));
 }
 function filterNoQueryPriorities(priorities) {
   return priorities.filter(
@@ -542,7 +542,7 @@ function filterNoQueryPriorities(priorities) {
       "Star",
       "Alphabetical",
       "Alphabetical reverse"
-    ].includes(x) || x.startsWith("#")
+    ].includes(x) || x.startsWith("#") || x.startsWith(".")
   );
 }
 function getComparator(priority) {
@@ -579,6 +579,10 @@ function getComparator(priority) {
       if (priority.startsWith("#")) {
         const tags = priority.split(",");
         return (a, b) => priorityToTags(a, b, tags);
+      }
+      if (priority.startsWith(".")) {
+        const extensions = priority.split(",").map((x) => x.slice(1));
+        return (a, b) => priorityToExtensions(a, b, extensions);
       }
       throw new ExhaustiveError(priority);
   }
@@ -707,7 +711,7 @@ function priorityToStar(a, b) {
 }
 var toComparedAlphabetical = (item) => {
   var _a, _b;
-  return excludeEmoji((_b = (_a = item.matchResults[0]) == null ? void 0 : _a.alias) != null ? _b : item.file.basename);
+  return excludeEmoji((_b = (_a = item.matchResults[0]) == null ? void 0 : _a.alias) != null ? _b : item.file.basename).toLowerCase();
 };
 function priorityToAlphabetical(a, b) {
   return toComparedAlphabetical(a).localeCompare(toComparedAlphabetical(b));
@@ -717,6 +721,14 @@ function priorityToAlphabeticalReverse(a, b) {
 }
 function priorityToTags(a, b, tags) {
   return compare(a, b, (x) => intersection([tags, x.tags]).length, "desc");
+}
+function priorityToExtensions(a, b, extensions) {
+  return compare(
+    a,
+    b,
+    (x) => Number(extensions.contains(x.file.extension)),
+    "desc"
+  );
 }
 
 // src/keys.ts
@@ -794,7 +806,10 @@ var createDefaultHotkeys = () => ({
     "open first URL": [{ modifiers: ["Mod"], key: "]" }],
     "insert to editor": [{ modifiers: ["Alt"], key: "Enter" }],
     "insert all to editor": [{ modifiers: ["Alt", "Shift"], key: "Enter" }],
-    "show backlinks": [{ modifiers: ["Mod"], key: "h" }]
+    "show backlinks": [{ modifiers: ["Mod"], key: "h" }],
+    "show links": [{ modifiers: ["Mod"], key: "l" }],
+    "navigate forward": [{ modifiers: ["Alt"], key: "ArrowRight" }],
+    "navigate back": [{ modifiers: ["Alt"], key: "ArrowLeft" }]
   },
   move: {
     up: [{ modifiers: ["Mod"], key: "p" }],
@@ -852,6 +867,25 @@ var createDefaultSearchCommand = () => ({
   excludePrefixPathPatterns: [],
   expand: true
 });
+var createDefaultLinkSearchCommand = () => ({
+  name: "Link search",
+  searchBy: {
+    tag: false,
+    link: false,
+    header: false
+  },
+  searchTarget: "link",
+  targetExtensions: [],
+  floating: false,
+  showFrontMatter: false,
+  excludeFrontMatterKeys: createDefaultExcludeFrontMatterKeys(),
+  defaultInput: "",
+  commandPrefix: "",
+  sortPriorities: [],
+  includePrefixPathPatterns: [],
+  excludePrefixPathPatterns: [],
+  expand: false
+});
 var createDefaultBacklinkSearchCommand = () => ({
   name: "Backlink search",
   searchBy: {
@@ -886,7 +920,7 @@ var createPreSettingSearchCommands = () => [
     excludeFrontMatterKeys: createDefaultExcludeFrontMatterKeys(),
     defaultInput: "",
     commandPrefix: ":e ",
-    sortPriorities: ["Name match", "Last opened", "Last modified"],
+    sortPriorities: ["Name match", ".md", "Last opened", "Last modified"],
     includePrefixPathPatterns: [],
     excludePrefixPathPatterns: [],
     expand: true
@@ -908,6 +942,7 @@ var createPreSettingSearchCommands = () => [
     sortPriorities: [
       "Prefix name match",
       "Alphabetical",
+      ".md",
       "Last opened",
       "Last modified"
     ],
@@ -935,6 +970,7 @@ var createPreSettingSearchCommands = () => [
       "Tag match",
       "Header match",
       "Link match",
+      ".md",
       "Last opened",
       "Last modified"
     ],
@@ -956,11 +992,12 @@ var createPreSettingSearchCommands = () => [
     excludeFrontMatterKeys: createDefaultExcludeFrontMatterKeys(),
     defaultInput: "",
     commandPrefix: ":s ",
-    sortPriorities: ["Star", "Last opened", "Last modified"],
+    sortPriorities: ["Star", ".md", "Last opened", "Last modified"],
     includePrefixPathPatterns: [],
     excludePrefixPathPatterns: [],
     expand: false
   },
+  createDefaultLinkSearchCommand(),
   createDefaultBacklinkSearchCommand()
 ];
 var DEFAULT_SETTINGS = {
@@ -1579,11 +1616,9 @@ var AppHelper = class {
     }
     return backLinksMap;
   }
-  createActiveFileLinkMap() {
+  createLinksMap(file) {
     var _a, _b;
-    const cache = this.unsafeApp.metadataCache.getFileCache(
-      this.getActiveFile()
-    );
+    const cache = this.unsafeApp.metadataCache.getFileCache(file);
     return mapValues(
       groupBy(
         [...(_a = cache == null ? void 0 : cache.embeds) != null ? _a : [], ...(_b = cache == null ? void 0 : cache.links) != null ? _b : []],
@@ -2182,7 +2217,7 @@ function buildLogMessage(message, msec) {
   return `${message}: ${Math.round(msec)}[ms]`;
 }
 var AnotherQuickSwitcherModal = class extends import_obsidian4.SuggestModal {
-  constructor(app2, settings, command, originFile) {
+  constructor(app2, settings, command, originFile, inputQuery, navigationHistories, currentNavigationHistoryIndex, stackHistory) {
     super(app2);
     this.appHelper = new AppHelper(app2);
     this.settings = settings;
@@ -2190,6 +2225,10 @@ var AnotherQuickSwitcherModal = class extends import_obsidian4.SuggestModal {
     this.command = command;
     this.originFile = originFile;
     this.floating = command.floating;
+    this.initialInputQuery = inputQuery;
+    this.navigationHistories = navigationHistories;
+    this.currentNavigationHistoryIndex = currentNavigationHistoryIndex;
+    this.stackHistory = stackHistory;
     this.limit = this.settings.maxNumberOfSuggestions;
     this.setHotkeys();
     this.phantomItems = this.settings.showExistingFilesOnly ? [] : this.appHelper.searchPhantomFiles().map((x) => ({
@@ -2217,6 +2256,16 @@ var AnotherQuickSwitcherModal = class extends import_obsidian4.SuggestModal {
     if (this.command.floating) {
       this.enableFloating();
     }
+    this.inputEl.value = this.initialInputQuery;
+    this.inputEl.dispatchEvent(new Event("input"));
+    if (this.stackHistory) {
+      this.navigationHistories.push({
+        inputQuery: this.inputEl.value,
+        command: { ...this.command },
+        originFile: this.originFile
+      });
+    }
+    this.opened = true;
   }
   enableFloating() {
     var _a;
@@ -2316,7 +2365,7 @@ var AnotherQuickSwitcherModal = class extends import_obsidian4.SuggestModal {
           );
           break;
         case "link":
-          const originFileLinkMap = this.appHelper.createActiveFileLinkMap();
+          const originFileLinkMap = this.originFile ? this.appHelper.createLinksMap(this.originFile) : {};
           items = items.filter((x) => originFileLinkMap[x.file.path]).sort(
             sorter(
               (x) => originFileLinkMap[x.file.path].position.start.offset
@@ -2342,7 +2391,7 @@ var AnotherQuickSwitcherModal = class extends import_obsidian4.SuggestModal {
     );
   }
   getSuggestions(query) {
-    if (!query || query === this.command.defaultInput) {
+    if (!query || query === this.command.defaultInput || !this.opened) {
       return this._getSuggestions(query);
     }
     return new Promise((resolve) => {
@@ -2405,10 +2454,26 @@ var AnotherQuickSwitcherModal = class extends import_obsidian4.SuggestModal {
     return items.slice(0, this.settings.maxNumberOfSuggestions).map((x, order) => ({ ...x, order }));
   }
   renderInputComponent() {
-    var _a, _b, _c;
-    (_a = this.searchCommandEl) == null ? void 0 : _a.remove();
-    (_b = this.defaultInputEl) == null ? void 0 : _b.remove();
-    (_c = this.countInputEl) == null ? void 0 : _c.remove();
+    var _a, _b, _c, _d;
+    (_a = this.navigationHistoryEl) == null ? void 0 : _a.remove();
+    (_b = this.searchCommandEl) == null ? void 0 : _b.remove();
+    (_c = this.defaultInputEl) == null ? void 0 : _c.remove();
+    (_d = this.countInputEl) == null ? void 0 : _d.remove();
+    this.navigationHistoryEl = createDiv({
+      cls: "another-quick-switcher__custom-search__navigation-history-header"
+    });
+    const backHistoryLength = this.currentNavigationHistoryIndex;
+    if (backHistoryLength > 0) {
+      this.navigationHistoryEl.appendText(`${backHistoryLength} < `);
+    }
+    this.navigationHistoryEl.appendText(
+      this.originFile ? this.originFile.basename : "No file"
+    );
+    const forwardHistoryLength = this.navigationHistories.length - this.currentNavigationHistoryIndex - 1;
+    if (forwardHistoryLength > 0) {
+      this.navigationHistoryEl.appendText(` > ${forwardHistoryLength}`);
+    }
+    this.inputEl.before(this.navigationHistoryEl);
     this.searchCommandEl = createDiv({
       cls: "another-quick-switcher__status__search-command"
     });
@@ -2632,7 +2697,7 @@ var AnotherQuickSwitcherModal = class extends import_obsidian4.SuggestModal {
       var _a;
       this.close();
       let offsetX = 0;
-      (_a = this.chooser.values) == null ? void 0 : _a.forEach((x, i) => {
+      (_a = this.chooser.values) == null ? void 0 : _a.forEach((x) => {
         if (this.appHelper.isActiveLeafCanvas()) {
           const cv = this.appHelper.addFileToCanvas(x.file, {
             x: offsetX,
@@ -2645,7 +2710,7 @@ var AnotherQuickSwitcherModal = class extends import_obsidian4.SuggestModal {
         }
       });
     });
-    this.registerKeys("show backlinks", () => {
+    const navigateLinks = (command) => {
       var _a, _b;
       const file = (_b = (_a = this.chooser.values) == null ? void 0 : _a[this.chooser.selectedItem]) == null ? void 0 : _b.file;
       if (!file) {
@@ -2656,12 +2721,59 @@ var AnotherQuickSwitcherModal = class extends import_obsidian4.SuggestModal {
         this.app,
         this.settings,
         {
-          ...createDefaultBacklinkSearchCommand(),
-          floating: this.command.floating
+          ...command,
+          floating: this.floating
         },
-        file
+        file,
+        "",
+        [
+          ...this.navigationHistories.slice(
+            0,
+            this.currentNavigationHistoryIndex
+          ),
+          {
+            inputQuery: this.inputEl.value,
+            command: { ...this.command },
+            originFile: this.originFile
+          }
+        ],
+        this.currentNavigationHistoryIndex + 1,
+        true
       );
       modal.open();
+    };
+    this.registerKeys("show links", () => {
+      navigateLinks(createDefaultLinkSearchCommand());
+    });
+    this.registerKeys("show backlinks", () => {
+      navigateLinks(createDefaultBacklinkSearchCommand());
+    });
+    const navigate = (index) => {
+      const history = this.navigationHistories[index];
+      if (!history) {
+        return;
+      }
+      this.close();
+      const modal = new AnotherQuickSwitcherModal(
+        this.app,
+        this.settings,
+        {
+          ...history.command,
+          floating: this.floating
+        },
+        history.originFile,
+        history.inputQuery,
+        this.navigationHistories,
+        index,
+        false
+      );
+      modal.open();
+    };
+    this.registerKeys("navigate back", () => {
+      navigate(this.currentNavigationHistoryIndex - 1);
+    });
+    this.registerKeys("navigate forward", () => {
+      navigate(this.currentNavigationHistoryIndex + 1);
     });
     const modifierKey = this.settings.userAltInsteadOfModForQuickResultSelection ? "Alt" : "Mod";
     [1, 2, 3, 4, 5, 6, 7, 8, 9].forEach((n) => {
@@ -3464,7 +3576,11 @@ function showSearchDialog(app2, settings, command) {
     app2,
     settings,
     command,
-    app2.workspace.getActiveFile()
+    app2.workspace.getActiveFile(),
+    "",
+    [],
+    0,
+    true
   );
   modal.open();
 }

@@ -13,14 +13,15 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Calendar/Daily notes/2023-01-02.md",
+                "file": "Calendar/已发布文章/这才是重器轻用，用notion珍藏喜闻乐见的涩涩资源.md",
                 "mode": "source",
                 "backlinks": true,
                 "source": false
               }
             }
           }
-        ]
+        ],
+        "stacked": true
       }
     ],
     "direction": "vertical"
@@ -83,7 +84,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Calendar/Daily notes/2023-01-02.md"
+                "file": "Calendar/已发布文章/这才是重器轻用，用notion珍藏喜闻乐见的涩涩资源.md"
               }
             }
           },
@@ -93,7 +94,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Calendar/Daily notes/2023-01-02.md",
+                "file": "Calendar/已发布文章/这才是重器轻用，用notion珍藏喜闻乐见的涩涩资源.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -105,7 +106,7 @@
             "state": {
               "type": "localgraph",
               "state": {
-                "file": "Calendar/Daily notes/2023-01-02.md",
+                "file": "Calendar/已发布文章/这才是重器轻用，用notion珍藏喜闻乐见的涩涩资源.md",
                 "options": {
                   "collapse-filter": true,
                   "search": "",
@@ -140,7 +141,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Calendar/Daily notes/2023-01-02.md",
+                "file": "Calendar/已发布文章/这才是重器轻用，用notion珍藏喜闻乐见的涩涩资源.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -166,18 +167,18 @@
         "type": "tabs",
         "children": [
           {
-            "id": "fbf20229279daad7",
+            "id": "9a0dc720041967d6",
             "type": "leaf",
             "state": {
-              "type": "daily-note-outline",
+              "type": "review-queue-list-view",
               "state": {}
             }
           },
           {
-            "id": "422449fe44c7f22f",
+            "id": "9ddb13cebe6be056",
             "type": "leaf",
             "state": {
-              "type": "review-queue-list-view",
+              "type": "daily-note-outline",
               "state": {}
             }
           }
@@ -197,27 +198,28 @@
       "command-palette:打开命令面板": true,
       "workspaces:管理工作区布局": false,
       "canvas:Create new canvas": false,
-      "templater-obsidian:Templater": true,
+      "templater-obsidian:Templater": false,
       "obsidian-weread-plugin:Weread": false,
       "obsidian-hypothesis-plugin:Sync your hypothesis highlights": false,
-      "omnisearch:Omnisearch": true,
       "obsidian-textgenerator-plugin:Generate Text!": false,
       "obsidian-textgenerator-plugin:Text Generator: Templates Packages Manager": false,
+      "omnisearch:Omnisearch": false,
+      "obsidian-spaced-repetition:复习卡片": false,
       "obsidian-projects:Open projects": false,
-      "obsidian-spaced-repetition:复习卡片": false
+      "remotely-save:Remotely Save": false
     }
   },
   "active": "ec10809e491d45db",
   "lastOpenFiles": [
-    "Cards/永久笔记/个人知识笔记系统.md",
-    "Calendar/Daily notes/2023-01-02.md",
-    "Cards/永久笔记/个人信息管理系统.md",
-    "Sources/Courses/面试现场-白海飞/§ 面试现场 - 白海飞.md",
-    "🧰 本库指南/Tutorials/§ 本库obsidian使用说明书.md",
-    "Sources/Books/微信读书同步/生活百科/4分钟极速减脂-刘洹.md",
-    "README.md",
-    "Calendar/Daily notes/2022-12-31.md",
-    "Cards/永久笔记/自己部署一个v2ray服务.md",
-    "Sources/Courses/面试现场-白海飞/如何让你的简历更受青睐.md"
+    "Cards/永久笔记/🤖notion.md",
+    "Cards/永久笔记/团队信息与知识共享.md",
+    "Cards/永久笔记/个人时间使用的宏观洞察.md",
+    "Calendar/已发布文章/这才是重器轻用，用notion珍藏喜闻乐见的涩涩资源.md",
+    "Calendar/Daily notes/2022全部.md",
+    "Cards/永久笔记/刚下飞机.md",
+    "Calendar/Daily notes/2022年度网络流行语.md",
+    "Cards/永久笔记/raycast.md",
+    "Calendar/Daily notes/2023-01-16.md",
+    "Calendar/Daily notes/2022-12-29.md"
   ]
 }

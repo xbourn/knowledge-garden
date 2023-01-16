@@ -1353,7 +1353,7 @@ var require_slugify = __commonJS({
       const escapedSeparator = escapeStringRegexp(separator);
       return string.replace(new RegExp(`${escapedSeparator}{2,}`, "g"), separator).replace(new RegExp(`^${escapedSeparator}|${escapedSeparator}$`, "g"), "");
     };
-    var slugify2 = (string, options) => {
+    var slugify3 = (string, options) => {
       if (typeof string !== "string") {
         throw new TypeError(`Expected a string, got \`${typeof string}\``);
       }
@@ -1391,7 +1391,7 @@ var require_slugify = __commonJS({
     var counter = () => {
       const occurrences = new Map();
       const countable = (string, options) => {
-        string = slugify2(string, options);
+        string = slugify3(string, options);
         if (!string) {
           return "";
         }
@@ -1410,7 +1410,7 @@ var require_slugify = __commonJS({
       };
       return countable;
     };
-    module2.exports = slugify2;
+    module2.exports = slugify3;
     module2.exports.counter = counter;
   }
 });
@@ -4034,6 +4034,7 @@ var excalidraw = (excaliDrawJson, drawingId) => `<div id="${drawingId}"></div><s
 
 // src/Publisher.ts
 var import_obsidian_dataview = __toModule(require_lib());
+var import_slugify2 = __toModule(require_slugify());
 var Publisher = class {
   constructor(vault, metadataCache, settings) {
     this.frontmatterRegex = /^\s*?---\n([\s\S]*?)\n---/g;
@@ -4126,12 +4127,30 @@ var Publisher = class {
       }
       let text = yield this.vault.cachedRead(file);
       text = yield this.convertFrontMatter(text, file.path);
+      text = yield this.createBlockIDs(text);
       text = yield this.createTranscludedText(text, file.path, 0);
       text = yield this.convertDataViews(text, file.path);
       text = yield this.convertLinksToFullPath(text, file.path);
       text = yield this.removeObsidianComments(text);
       text = yield this.createSvgEmbeds(text, file.path);
       text = yield this.createBase64Images(text, file.path);
+      return text;
+    });
+  }
+  createBlockIDs(text) {
+    return __async(this, null, function* () {
+      const block_pattern = / \^([\w\d-]+)/g;
+      const complex_block_pattern = /\n\^([\w\d-]+)\n/g;
+      text = text.replace(complex_block_pattern, (match, $1) => {
+        return `{ #${$1}}
+
+`;
+      });
+      text = text.replace(block_pattern, (match, $1) => {
+        return `
+{ #${$1}}
+`;
+      });
       return text;
     });
   }
@@ -4244,7 +4263,8 @@ var Publisher = class {
     delete fileFrontMatter["position"];
     let publishedFrontMatter = { "dg-publish": true };
     publishedFrontMatter = this.addPermalink(fileFrontMatter, publishedFrontMatter, filePath);
-    publishedFrontMatter = this.addHomePageTag(fileFrontMatter, publishedFrontMatter);
+    publishedFrontMatter = this.addDefaultPassThrough(fileFrontMatter, publishedFrontMatter);
+    publishedFrontMatter = this.addPageTags(fileFrontMatter, publishedFrontMatter);
     publishedFrontMatter = this.addFrontMatterSettings(fileFrontMatter, publishedFrontMatter);
     const fullFrontMatter = (publishedFrontMatter == null ? void 0 : publishedFrontMatter.dgPassFrontmatter) ? __spreadValues(__spreadValues({}, fileFrontMatter), publishedFrontMatter) : publishedFrontMatter;
     const frontMatterString = JSON.stringify(fullFrontMatter);
@@ -4253,8 +4273,20 @@ ${frontMatterString}
 ---
 `;
   }
+  addDefaultPassThrough(baseFrontMatter, newFrontMatter) {
+    const publishedFrontMatter = __spreadValues({}, newFrontMatter);
+    if (baseFrontMatter) {
+      if (baseFrontMatter["title"]) {
+        publishedFrontMatter["title"] = baseFrontMatter["title"];
+      }
+      if (baseFrontMatter["dg-metatags"]) {
+        publishedFrontMatter["metatags"] = baseFrontMatter["dg-metatags"];
+      }
+    }
+    return publishedFrontMatter;
+  }
   addPermalink(baseFrontMatter, newFrontMatter, filePath) {
-    let publishedFrontMatter = __spreadValues({}, newFrontMatter);
+    const publishedFrontMatter = __spreadValues({}, newFrontMatter);
     if (baseFrontMatter && baseFrontMatter["dg-permalink"]) {
       publishedFrontMatter["dg-permalink"] = baseFrontMatter["dg-permalink"];
       publishedFrontMatter["permalink"] = baseFrontMatter["dg-permalink"];
@@ -4270,18 +4302,15 @@ ${frontMatterString}
     }
     return publishedFrontMatter;
   }
-  addHomePageTag(baseFrontMatter, newFrontMatter) {
+  addPageTags(baseFrontMatter, newFrontMatter) {
     const publishedFrontMatter = __spreadValues({}, newFrontMatter);
-    if (baseFrontMatter && baseFrontMatter["dg-home"]) {
-      const tags = baseFrontMatter["tags"];
-      if (tags) {
-        if (typeof tags === "string") {
-          publishedFrontMatter["tags"] = [tags, "gardenEntry"];
-        } else {
-          publishedFrontMatter["tags"] = [...tags, "gardenEntry"];
-        }
-      } else {
-        publishedFrontMatter["tags"] = "gardenEntry";
+    if (baseFrontMatter) {
+      const tags = (typeof baseFrontMatter["tags"] == "string" ? [baseFrontMatter["tags"]] : baseFrontMatter["tags"]) || [];
+      if (baseFrontMatter["dg-home"]) {
+        tags.push("gardenEntry");
+      }
+      if (tags.length > 0) {
+        publishedFrontMatter["tags"] = tags;
       }
     }
     return publishedFrontMatter;
@@ -4346,6 +4375,7 @@ ${frontMatterString}
       if (currentDepth >= 4) {
         return text;
       }
+      const publishedFiles = yield this.getFilesMarkedForPublishing();
       let transcludedText = text;
       const transcludedRegex = /!\[\[(.*?)\]\]/g;
       const transclusionMatches = text.match(transcludedRegex);
@@ -4354,23 +4384,38 @@ ${frontMatterString}
         for (let i = 0; i < transclusionMatches.length; i++) {
           try {
             const transclusionMatch = transclusionMatches[i];
-            let [tranclusionFileName, headerName] = transclusionMatch.substring(transclusionMatch.indexOf("[") + 2, transclusionMatch.indexOf("]")).split("|");
+            const [tranclusionFileName, headerName] = transclusionMatch.substring(transclusionMatch.indexOf("[") + 2, transclusionMatch.indexOf("]")).split("|");
             const tranclusionFilePath = (0, import_obsidian2.getLinkpath)(tranclusionFileName);
             const linkedFile = this.metadataCache.getFirstLinkpathDest(tranclusionFilePath, filePath);
+            let sectionID = "";
             if (linkedFile.name.endsWith(".excalidraw.md")) {
-              let firstDrawing = ++numberOfExcaliDraws === 1;
+              const firstDrawing = ++numberOfExcaliDraws === 1;
               const excaliDrawCode = yield this.generateExcalidrawMarkdown(linkedFile, firstDrawing, `${numberOfExcaliDraws}`, false);
               transcludedText = transcludedText.replace(transclusionMatch, excaliDrawCode);
             } else if (linkedFile.extension === "md") {
               let fileText = yield this.vault.cachedRead(linkedFile);
-              if (tranclusionFileName.includes("#")) {
+              if (tranclusionFileName.includes("#^")) {
+                const metadata = this.metadataCache.getFileCache(linkedFile);
+                const refBlock = tranclusionFileName.split("#^")[1];
+                sectionID = `#${(0, import_slugify2.default)(refBlock)}`;
+                const blockInFile = metadata.blocks[refBlock];
+                if (blockInFile) {
+                  fileText = fileText.split("\n").slice(blockInFile.position.start.line, blockInFile.position.end.line + 1).join("\n").replace(`^${refBlock}`, "");
+                }
+              } else if (tranclusionFileName.includes("#")) {
                 const metadata = this.metadataCache.getFileCache(linkedFile);
                 const refHeader = tranclusionFileName.split("#")[1];
                 const headerInFile = (_a = metadata.headings) == null ? void 0 : _a.find((header2) => header2.heading === refHeader);
+                sectionID = `#${(0, import_slugify2.default)(refHeader)}`;
                 if (headerInFile) {
-                  const cutTo = metadata.headings[metadata.headings.indexOf(headerInFile) + 1];
-                  const cutToLine = (_c = (_b = cutTo == null ? void 0 : cutTo.position) == null ? void 0 : _b.start) == null ? void 0 : _c.line;
-                  fileText = fileText.split("\n").slice(headerInFile.position.start.line, cutToLine).join("\n");
+                  const headerPosition = metadata.headings.indexOf(headerInFile);
+                  const cutTo = metadata.headings.slice(headerPosition + 1).find((header2) => header2.level <= headerInFile.level);
+                  if (cutTo) {
+                    const cutToLine = (_c = (_b = cutTo == null ? void 0 : cutTo.position) == null ? void 0 : _b.start) == null ? void 0 : _c.line;
+                    fileText = fileText.split("\n").slice(headerInFile.position.start.line, cutToLine).join("\n");
+                  } else {
+                    fileText = fileText.split("\n").slice(headerInFile.position.start.line).join("\n");
+                  }
                 }
               }
               fileText = fileText.replace(this.frontmatterRegex, "");
@@ -4381,8 +4426,12 @@ ${header}
 
 </div>
 ` : "";
+              let embedded_link = "";
+              if (publishedFiles.find((f) => f.path == linkedFile.path)) {
+                embedded_link = `<a class="markdown-embed-link" href="/${generateUrlPath(linkedFile.path)}${sectionID}" aria-label="Open link"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon lucide-link"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a>`;
+              }
               fileText = `
-<div class="transclusion internal-embed is-loaded"><div class="markdown-embed">
+<div class="transclusion internal-embed is-loaded">${embedded_link}<div class="markdown-embed">
 
 ${headerSection}
 
@@ -4415,7 +4464,7 @@ ${headerSection}
       if (transcludedSvgs) {
         for (const svg of transcludedSvgs) {
           try {
-            let [imageName, size] = svg.substring(svg.indexOf("[") + 2, svg.indexOf("]")).split("|");
+            const [imageName, size] = svg.substring(svg.indexOf("[") + 2, svg.indexOf("]")).split("|");
             const imagePath = (0, import_obsidian2.getLinkpath)(imageName);
             const linkedFile = this.metadataCache.getFirstLinkpathDest(imagePath, filePath);
             let svgText = yield this.vault.read(linkedFile);
@@ -4433,10 +4482,10 @@ ${headerSection}
       if (linkedSvgMatches) {
         for (const svg of linkedSvgMatches) {
           try {
-            let [imageName, size] = svg.substring(svg.indexOf("[") + 2, svg.indexOf("]")).split("|");
-            let pathStart = svg.lastIndexOf("(") + 1;
-            let pathEnd = svg.lastIndexOf(")");
-            let imagePath = svg.substring(pathStart, pathEnd);
+            const [imageName, size] = svg.substring(svg.indexOf("[") + 2, svg.indexOf("]")).split("|");
+            const pathStart = svg.lastIndexOf("(") + 1;
+            const pathEnd = svg.lastIndexOf(")");
+            const imagePath = svg.substring(pathStart, pathEnd);
             if (imagePath.startsWith("http")) {
               continue;
             }
@@ -4468,7 +4517,7 @@ ${headerSection}
         for (let i = 0; i < transcludedImageMatches.length; i++) {
           try {
             const imageMatch = transcludedImageMatches[i];
-            let [imageName, size] = imageMatch.substring(imageMatch.indexOf("[") + 2, imageMatch.indexOf("]")).split("|");
+            const [imageName, size] = imageMatch.substring(imageMatch.indexOf("[") + 2, imageMatch.indexOf("]")).split("|");
             const imagePath = (0, import_obsidian2.getLinkpath)(imageName);
             const linkedFile = this.metadataCache.getFirstLinkpathDest(imagePath, filePath);
             const image = yield this.vault.readBinary(linkedFile);
@@ -4487,12 +4536,12 @@ ${headerSection}
         for (let i = 0; i < imageMatches.length; i++) {
           try {
             const imageMatch = imageMatches[i];
-            let nameStart = imageMatch.indexOf("[") + 1;
-            let nameEnd = imageMatch.indexOf("]");
-            let imageName = imageMatch.substring(nameStart, nameEnd);
-            let pathStart = imageMatch.lastIndexOf("(") + 1;
-            let pathEnd = imageMatch.lastIndexOf(")");
-            let imagePath = imageMatch.substring(pathStart, pathEnd);
+            const nameStart = imageMatch.indexOf("[") + 1;
+            const nameEnd = imageMatch.indexOf("]");
+            const imageName = imageMatch.substring(nameStart, nameEnd);
+            const pathStart = imageMatch.lastIndexOf("(") + 1;
+            const pathEnd = imageMatch.lastIndexOf(")");
+            const imagePath = imageMatch.substring(pathStart, pathEnd);
             if (imagePath.startsWith("http")) {
               continue;
             }
@@ -4737,6 +4786,7 @@ ${key}=${defaultNoteSettings[key]}`;
         "src/site/img/outgoing.svg",
         "src/helpers/constants.js",
         "src/helpers/utils.js",
+        "src/helpers/linkUtils.js",
         "netlify/functions/search/search.js"
       ];
       for (const file of filesToModify) {
@@ -4911,6 +4961,13 @@ var SettingView = class {
         t.setValue(this.settings.defaultNoteSettings.dgLinkPreview);
         t.onChange((val) => {
           this.settings.defaultNoteSettings.dgLinkPreview = val;
+          this.saveSiteSettingsAndUpdateEnv(this.app.metadataCache, this.settings, this.saveSettings);
+        });
+      });
+      new import_obsidian3.Setting(noteSettingsModal.contentEl).setName("Show Tags (dg-show-tags)").setDesc("When turned on, tags in your frontmatter will be displayed on each note. If search is enabled, clicking on a tag will bring up a search for all notes containing that tag.").addToggle((t) => {
+        t.setValue(this.settings.defaultNoteSettings.dgShowTags);
+        t.onChange((val) => {
+          this.settings.defaultNoteSettings.dgShowTags = val;
           this.saveSiteSettingsAndUpdateEnv(this.app.metadataCache, this.settings, this.saveSettings);
         });
       });
@@ -5472,7 +5529,8 @@ var DEFAULT_SETTINGS = {
     dgShowFileTree: false,
     dgEnableSearch: false,
     dgShowToc: false,
-    dgLinkPreview: false
+    dgLinkPreview: false,
+    dgShowTags: false
   }
 };
 var DigitalGarden = class extends import_obsidian5.Plugin {
