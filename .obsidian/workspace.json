@@ -1,0 +1,223 @@
+{
+  "main": {
+    "id": "3bbafcddc5676ca8",
+    "type": "split",
+    "children": [
+      {
+        "id": "a0d772f4e3a97035",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "ec10809e491d45db",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Calendar/Daily notes/2023-01-02.md",
+                "mode": "source",
+                "backlinks": true,
+                "source": false
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "e3dd4e8fbf886eda",
+    "type": "split",
+    "children": [
+      {
+        "id": "987dbc5670d8f4fa",
+        "type": "tabs",
+        "dimension": 63.92785571142284,
+        "children": [
+          {
+            "id": "a4d1994dfc9f1870",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "ce044dedd57e8849",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "4ea8d6f6779182a1",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "92910ae8836a7b22",
+        "type": "tabs",
+        "dimension": 36.07214428857716,
+        "children": [
+          {
+            "id": "e3c3bc13cb0131c1",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "Calendar/Daily notes/2023-01-02.md"
+              }
+            }
+          },
+          {
+            "id": "853ef9e400d6f719",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "Calendar/Daily notes/2023-01-02.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "ce0157bd2897bffe",
+            "type": "leaf",
+            "state": {
+              "type": "localgraph",
+              "state": {
+                "file": "Calendar/Daily notes/2023-01-02.md",
+                "options": {
+                  "collapse-filter": true,
+                  "search": "",
+                  "localJumps": 1,
+                  "localBacklinks": true,
+                  "localForelinks": true,
+                  "localInterlinks": false,
+                  "showTags": false,
+                  "showAttachments": false,
+                  "hideUnresolved": false,
+                  "collapse-color-groups": true,
+                  "colorGroups": [],
+                  "collapse-display": true,
+                  "showArrow": false,
+                  "textFadeMultiplier": 0,
+                  "nodeSizeMultiplier": 1,
+                  "lineSizeMultiplier": 1,
+                  "collapse-forces": true,
+                  "centerStrength": 0.518713248970312,
+                  "repelStrength": 10,
+                  "linkStrength": 1,
+                  "linkDistance": 250,
+                  "scale": 1,
+                  "close": true
+                }
+              }
+            }
+          },
+          {
+            "id": "687dfb8cd0c53082",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "Calendar/Daily notes/2023-01-02.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 222.50247192382812
+  },
+  "right": {
+    "id": "c718ea3b78af998f",
+    "type": "split",
+    "children": [
+      {
+        "id": "e0ca5f2ea8f2eeda",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "fbf20229279daad7",
+            "type": "leaf",
+            "state": {
+              "type": "daily-note-outline",
+              "state": {}
+            }
+          },
+          {
+            "id": "422449fe44c7f22f",
+            "type": "leaf",
+            "state": {
+              "type": "review-queue-list-view",
+              "state": {}
+            }
+          }
+        ],
+        "currentTab": 1
+      }
+    ],
+    "direction": "horizontal",
+    "width": 318.5,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:打开快速切换": false,
+      "graph:查看关系图谱": false,
+      "daily-notes:打开/创建今天的日记": false,
+      "command-palette:打开命令面板": true,
+      "workspaces:管理工作区布局": false,
+      "canvas:Create new canvas": false,
+      "templater-obsidian:Templater": true,
+      "obsidian-weread-plugin:Weread": false,
+      "obsidian-hypothesis-plugin:Sync your hypothesis highlights": false,
+      "omnisearch:Omnisearch": true,
+      "obsidian-textgenerator-plugin:Generate Text!": false,
+      "obsidian-textgenerator-plugin:Text Generator: Templates Packages Manager": false,
+      "obsidian-projects:Open projects": false,
+      "obsidian-spaced-repetition:复习卡片": false
+    }
+  },
+  "active": "ec10809e491d45db",
+  "lastOpenFiles": [
+    "Cards/永久笔记/个人知识笔记系统.md",
+    "Calendar/Daily notes/2023-01-02.md",
+    "Cards/永久笔记/个人信息管理系统.md",
+    "Sources/Courses/面试现场-白海飞/§ 面试现场 - 白海飞.md",
+    "🧰 本库指南/Tutorials/§ 本库obsidian使用说明书.md",
+    "Sources/Books/微信读书同步/生活百科/4分钟极速减脂-刘洹.md",
+    "README.md",
+    "Calendar/Daily notes/2022-12-31.md",
+    "Cards/永久笔记/自己部署一个v2ray服务.md",
+    "Sources/Courses/面试现场-白海飞/如何让你的简历更受青睐.md"
+  ]
+}
